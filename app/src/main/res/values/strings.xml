@@ -1,0 +1,9 @@
+<resources>
+    <string name="application_name">Lucky</string>
+    <string name="launch_name">Lucky</string>
+    <string name="application_name_alpha">Lucky</string>
+    <string name="launch_name_alpha">Lucky</string>
+    <string name="application_name_meta">Lucky</string>
+    <string name="launch_name_meta">Lucky</string>
+    <string name="app_icon">Lucky</string>
+</resources>

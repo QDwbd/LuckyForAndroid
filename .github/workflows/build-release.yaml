@@ -1,0 +1,171 @@
+name: Build Project
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    # 每天三次(UTC)检查 MetaCubeX/mihomo 是否有新版本
+    - cron: "0 0,8,16 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK & CMake
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "ndk;27.2.12479018" \
+            "cmake;3.22.1" \
+            > /dev/null 2>&1 || true
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('core/src/foss/golang/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Monitor mihomo version
+        id: monitor_mihomo
+        shell: pwsh
+        run: |
+          $manifest = Get-Content manifest/version.json -Raw | ConvertFrom-Json
+          $before_stable = $manifest.latest.mihomo
+          $before_alpha = $manifest.latest.mihomo_alpha
+          Write-Host "Stable Before: $before_stable"
+          Write-Host "Alpha Before: $before_alpha"
+
+          $headers = @{ "User-Agent" = "lucky-ci" }
+          $after_stable = ((Invoke-RestMethod -Uri "https://github.com/MetaCubeX/mihomo/releases/latest/download/version.txt" -Headers $headers) -replace "\s+$","")
+          try {
+            $after_alpha = ((Invoke-RestMethod -Uri "https://github.com/MetaCubeX/mihomo/releases/download/Prerelease-Alpha/version.txt" -Headers $headers) -replace "\s+$","")
+          } catch {
+            $after_alpha = $before_alpha
+          }
+          Write-Host "Stable After: $after_stable"
+          Write-Host "Alpha After: $after_alpha"
+
+          if ($before_stable -ne $after_stable) {
+            "stable_changed=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Write-Host "mihomo stable version changed."
+          } else {
+            "stable_changed=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Write-Host "mihomo stable version unchanged."
+          }
+          if ($before_alpha -ne $after_alpha) {
+            "alpha_changed=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Write-Host "mihomo alpha version changed."
+          } else {
+            "alpha_changed=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Write-Host "mihomo alpha version unchanged."
+          }
+
+          if (($before_stable -ne $after_stable) -or ($before_alpha -ne $after_alpha)) {
+            $manifest.latest.mihomo = $after_stable
+            $manifest.latest.mihomo_alpha = $after_alpha
+            $manifest | ConvertTo-Json | Set-Content manifest/version.json -Encoding utf8
+            "changed=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Write-Host "mihomo version file changed."
+            git --no-pager diff -- manifest/version.json
+          } else {
+            "changed=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            Write-Host "mihomo versions unchanged."
+          }
+
+
+      - name: Commit and push mihomo version update
+        if: steps.monitor_mihomo.outputs.changed == 'true'
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest/version.json
+          git commit -m "chore: update mihomo versions [skip ci]"
+          git push
+
+      - name: Generate signing keystore
+        if: github.event_name != 'schedule' || steps.monitor_mihomo.outputs.stable_changed == 'true'
+        shell: bash
+        run: |
+          PASS="$(openssl rand -hex 16)"
+          keytool -genkeypair -v \
+            -keystore release.keystore \
+            -alias lucky \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass "$PASS" -keypass "$PASS" \
+            -dname "CN=Lucky, OU=Lucky, O=Lucky, L=Beijing, ST=Beijing, C=CN"
+          printf 'keystore.password=%s\nkey.alias=lucky\nkey.password=%s\n' "$PASS" "$PASS" > signing.properties
+
+      - name: Build the project
+        if: github.event_name != 'schedule' || steps.monitor_mihomo.outputs.stable_changed == 'true'
+        shell: pwsh
+        run: |
+          $m = Get-Content manifest/version.json -Raw | ConvertFrom-Json
+          .\gradlew.bat --no-daemon `
+            -PversionName="$($m.apk.versionName)" `
+            app:assembleMetaRelease
+
+      - name: Get version
+        if: github.event_name != 'schedule' || steps.monitor_mihomo.outputs.stable_changed == 'true'
+        shell: pwsh
+        run: |
+          $m = Get-Content manifest/version.json -Raw | ConvertFrom-Json
+          "VERSION=$($m.apk.versionName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Delete previous release and tag
+        if: github.event_name != 'schedule' || steps.monitor_mihomo.outputs.stable_changed == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "v$env:VERSION"
+          gh release delete $tag --cleanup-tag --yes 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "No existing release/tag $tag to delete."
+            exit 0
+          }
+          Write-Host "Deleted existing release and tag $tag."
+
+      - name: Create GitHub Release and upload APKs
+        if: github.event_name != 'schedule' || steps.monitor_mihomo.outputs.stable_changed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Release v${{ env.VERSION }}
+          body: |
+            📦 This is a new release of Lucky for Android.
+          files: app/build/outputs/apk/meta/release/*.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

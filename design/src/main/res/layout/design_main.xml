@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+        <variable
+            name="self"
+            type="com.github.lucky.clash.design.MainDesign" />
+        <variable
+            name="clashRunning"
+            type="boolean" />
+        <variable
+            name="forwarded"
+            type="String" />
+        <variable
+            name="mode"
+            type="String" />
+        <variable
+            name="profileName"
+            type="String" />
+        <variable
+            name="colorClashStarted"
+            type="int" />
+        <variable
+            name="colorClashStopped"
+            type="int" />
+        <variable
+            name="hasProviders"
+            type="boolean" />
+        <variable
+            name="selectedTab"
+            type="int" />
+
+        <import type="android.view.View" />
+        <import type="com.github.lucky.clash.design.MainDesign.Request" />
+    </data>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingStart="@{self.surface.insets.start}"
+        android:paddingEnd="@{self.surface.insets.end}">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:animateLayoutChanges="true"
+                android:clipToPadding="false"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/main_padding_horizontal"
+                android:paddingTop="@{self.surface.insets.top}"
+                android:paddingBottom="@dimen/main_section_margin_top">
+
+                <!-- 顶部横向 logo 和标题 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:minHeight="@dimen/main_top_banner_height"
+                    android:orientation="horizontal">
+
+                    <FrameLayout
+                        android:layout_width="@dimen/large_item_header_layout_size"
+                        android:layout_height="@dimen/large_item_header_layout_size">
+
+                        <ImageView
+                            android:id="@+id/logoImage"
+                            android:layout_width="@dimen/main_logo_size"
+                            android:layout_height="@dimen/main_logo_size"
+                            android:layout_gravity="center"
+                            android:contentDescription="@string/application_name"
+                            android:src="@drawable/my_logo" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/application_name"
+                        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6" />
+                </LinearLayout>
+
+                <!-- ===================== 状态 Tab ===================== -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="@{selectedTab == 0 ? View.VISIBLE : View.GONE}">
+
+
+                    <!-- Hero 霓虹渐变状态卡 -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="@dimen/hero_card_min_height"
+                        android:background="@{clashRunning ? @drawable/bg_hero_running : @drawable/bg_hero_stopped}"
+                        android:elevation="10dp"
+                        android:onClick="@{() -> self.request(Request.ToggleStatus)}"
+                        android:padding="@dimen/hero_card_padding">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:id="@+id/hero_icon"
+                                android:layout_width="@dimen/hero_icon_size"
+                                android:layout_height="@dimen/hero_icon_size"
+                                android:layout_gravity="center_vertical"
+                                android:layout_marginEnd="@dimen/hero_icon_margin_end"
+                                android:contentDescription="@null"
+                                android:src="@{clashRunning ? @drawable/ic_outline_check_circle : @drawable/ic_outline_not_interested}"
+                                android:tint="@android:color/white" />
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/hero_title"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@{clashRunning ? @string/running : @string/stopped}"
+                                    android:textColor="@android:color/white"
+                                    android:textSize="24sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/hero_subtitle"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="@{clashRunning ? @string/format_traffic_forwarded(forwarded) : @string/tap_to_start}"
+                                    android:textColor="#CCFFFFFF"
+                                    android:textSize="14sp" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <!-- 玻璃信息卡：模式 + 流量 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/main_section_margin_top"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:elevation="2dp"
+                            app:cardBackgroundColor="?attr/colorGlass"
+                            app:cardCornerRadius="@dimen/glass_card_radius"
+                            app:cardElevation="0dp"
+                            app:strokeColor="?attr/colorGlassBorder"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:padding="@dimen/glass_card_padding">
+
+                                <ImageView
+                                    android:layout_width="@dimen/glass_icon_size"
+                                    android:layout_height="@dimen/glass_icon_size"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/ic_baseline_apps"
+                                    android:tint="?attr/colorPrimary" />
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="@dimen/glass_text_margin"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/mode_label"
+                                        android:textColor="?android:attr/textColorSecondary"
+                                        android:textSize="12sp" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@{mode}"
+                                        android:textColor="?attr/colorPrimary"
+                                        android:textSize="16sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/glass_card_gap"
+                            android:layout_weight="1"
+                            android:elevation="2dp"
+                            app:cardBackgroundColor="?attr/colorGlass"
+                            app:cardCornerRadius="@dimen/glass_card_radius"
+                            app:cardElevation="0dp"
+                            app:strokeColor="?attr/colorGlassBorder"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:padding="@dimen/glass_card_padding">
+
+                                <ImageView
+                                    android:layout_width="@dimen/glass_icon_size"
+                                    android:layout_height="@dimen/glass_icon_size"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/ic_baseline_swap_vertical_circle"
+                                    android:tint="?attr/colorPrimary" />
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="@dimen/glass_text_margin"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/traffic_label"
+                                        android:textColor="?android:attr/textColorSecondary"
+                                        android:textSize="12sp" />
+
+                                    <TextView
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@{forwarded}"
+                                        android:textColor="?attr/colorPrimary"
+                                        android:textSize="16sp"
+                                        android:textStyle="bold" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+
+                    <!-- 连接 -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/connections_card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/main_section_margin_top"
+                        app:cardBackgroundColor="?attr/colorGlass"
+                        app:cardCornerRadius="@dimen/glass_card_radius"
+                        app:cardElevation="0dp"
+                        app:strokeColor="?attr/colorGlassBorder"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/glass_card_padding">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_horizontal"
+                                android:text="@string/connections_label"
+                                android:textColor="?android:attr/textColorSecondary"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+
+                            <LinearLayout
+                                android:id="@+id/connections_container"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/item_text_margin"
+                                android:orientation="vertical" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
+
+                <!-- ===================== 代理 Tab ===================== -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="@{selectedTab == 1 ? View.VISIBLE : View.GONE}">
+
+                    <com.github.lucky.clash.design.view.LargeActionCard
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginVertical="@dimen/main_card_margin_vertical"
+                        android:onClick="@{() -> self.request(Request.OpenProxy)}"
+                        app:icon="@drawable/ic_baseline_apps"
+                        app:subtext="@{mode}"
+                        app:text="@string/proxy" />
+                </LinearLayout>
+
+
+                <!-- ===================== 配置 Tab ===================== -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="@{selectedTab == 2 ? View.VISIBLE : View.GONE}">
+
+                    <com.github.lucky.clash.design.view.LargeActionCard
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginVertical="@dimen/main_card_margin_vertical"
+                        android:onClick="@{() -> self.request(Request.OpenProfiles)}"
+                        app:icon="@drawable/ic_baseline_view_list"
+                        app:subtext="@{profileName != null ? @string/format_profile_activated(profileName) : @string/not_selected}"
+                        app:text="@string/profile" />
+
+                    <com.github.lucky.clash.design.view.LargeActionLabel
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginVertical="@dimen/main_label_margin_vertical"
+                        android:onClick="@{() -> self.request(Request.OpenProviders)}"
+                        android:visibility="@{clashRunning &amp;&amp; hasProviders ? View.VISIBLE : View.GONE}"
+                        app:icon="@drawable/ic_baseline_swap_vertical_circle"
+                        app:text="@string/providers" />
+                </LinearLayout>
+
+
+                <!-- ===================== 设置 Tab ===================== -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="@{selectedTab == 3 ? View.VISIBLE : View.GONE}">
+
+                    <com.github.lucky.clash.design.view.LargeActionLabel
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginVertical="@dimen/main_label_margin_vertical"
+                        android:onClick="@{() -> self.request(Request.OpenLogs)}"
+                        app:icon="@drawable/ic_baseline_assignment"
+                        app:text="@string/logs" />
+
+                    <com.github.lucky.clash.design.view.LargeActionLabel
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginVertical="@dimen/main_label_margin_vertical"
+                        android:onClick="@{() -> self.request(Request.OpenSettings)}"
+                        app:icon="@drawable/ic_baseline_settings"
+                        app:text="@string/settings" />
+
+                    <com.github.lucky.clash.design.view.LargeActionLabel
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginVertical="@dimen/main_label_margin_vertical"
+                        android:onClick="@{() -> self.request(Request.OpenHelp)}"
+                        app:icon="@drawable/ic_baseline_help_center"
+                        app:text="@string/help" />
+
+                    <com.github.lucky.clash.design.view.LargeActionLabel
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginVertical="@dimen/main_label_margin_vertical"
+                        android:onClick="@{() -> self.request(Request.OpenAbout)}"
+                        app:icon="@drawable/ic_baseline_info"
+                        app:text="@string/about" />
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- 底部导航（着色交给 Material 内置默认，兼容全 API） -->
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottom_navigation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorSurface"
+            android:elevation="12dp"
+            android:paddingBottom="@{self.surface.insets.bottom}"
+            app:labelVisibilityMode="labeled"
+            app:menu="@menu/menu_main" />
+    </LinearLayout>
+</layout>

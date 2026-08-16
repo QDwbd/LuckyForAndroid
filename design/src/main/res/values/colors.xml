@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="color_clash_light">#1e4376</color>
+    <color name="color_clash_dark">#1976d2</color>
+    <color name="color_system_ui_overlay">#50000000</color>
+    <color name="color_light_background">#FFFAFAFA</color>
+    <color name="color_dark_background">#FF121212</color>
+    <color name="color_dark_surface">#FF202020</color>
+    <color name="color_light_clash_stopped">#FF808080</color>
+    <color name="color_light_control_disabled">#FFD3D3D3</color>
+    <color name="color_dark_control_disabled">#FF808080</color>
+    <color name="color_error">#FFB00020</color>
+
+    <!-- 霓虹 / 科技感配色 -->
+    <color name="neon_cyan">#00E5FF</color>
+    <color name="neon_blue">#2979FF</color>
+    <color name="neon_purple">#7C4DFF</color>
+    <color name="neon_pink">#FF4081</color>
+
+    <!-- Hero 状态卡渐变 -->
+    <color name="hero_running_start">#00E5FF</color>
+    <color name="hero_running_mid">#3D5AFE</color>
+    <color name="hero_running_end">#7C4DFF</color>
+    <color name="hero_stopped_start">#616161</color>
+    <color name="hero_stopped_end">#212121</color>
+
+    <!-- 玻璃卡片（亮/暗主题各自覆盖） -->
+    <color name="glass_fill_light">#F2FFFFFF</color>
+    <color name="glass_border_light">#26000000</color>
+    <color name="glass_fill_dark">#14FFFFFF</color>
+    <color name="glass_border_dark">#3DFFFFFF</color>
+    <color name="glass_inactive">#738A8A8A</color>
+</resources>
