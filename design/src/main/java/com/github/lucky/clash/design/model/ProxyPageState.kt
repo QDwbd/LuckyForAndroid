@@ -1,0 +1,6 @@
+package com.github.lucky.clash.design.model
+
+class ProxyPageState {
+    var bottom = false
+    var urlTesting = false
+}
