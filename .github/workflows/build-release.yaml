@@ -18,7 +18,7 @@ jobs:
 
     steps:
       # ==============================
-      # Checkout
+      # Checkout repository
       # ==============================
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
 
       # ==============================
-      # Java
+      # Setup Java
       # ==============================
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -35,25 +35,28 @@ jobs:
           java-version: "21"
 
       # ==============================
-      # Go
+      # Setup Go
       # ==============================
-      # 关闭 setup-go 自带缓存。
-      # 项目使用下面的 actions/cache 手动缓存，
-      # 避免 setup-go 自动寻找 go.sum 时产生警告。
+      # go.sum 实际位于：
+      # core/src/foss/golang/go.sum
+      #
+      # 指定 cache-dependency-path，
+      # 让 setup-go 正确计算 Go 依赖缓存。
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
           go-version: "1.24"
-          cache: false
+          cache: true
+          cache-dependency-path: "core/src/foss/golang/go.sum"
 
       # ==============================
-      # Android SDK
+      # Setup Android SDK
       # ==============================
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
 
       # ==============================
-      # Android NDK & CMake
+      # Install Android NDK & CMake
       # ==============================
       - name: Install Android NDK & CMake
         shell: bash
@@ -66,19 +69,6 @@ jobs:
             "ndk;27.2.12479018" \
             "cmake;3.22.1" \
             > /dev/null 2>&1 || true
-
-      # ==============================
-      # Go Cache
-      # ==============================
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('core/src/foss/golang/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
 
       # ==============================
       # Monitor mihomo version
@@ -180,7 +170,7 @@ jobs:
           }
 
       # ==============================
-      # Commit mihomo version update
+      # Commit and push mihomo version update
       # ==============================
       - name: Commit and push mihomo version update
         if: steps.monitor_mihomo.outputs.changed == 'true'
@@ -220,7 +210,7 @@ jobs:
             > signing.properties
 
       # ==============================
-      # Build
+      # Build project
       # ==============================
       - name: Build the project
         if: github.event_name != 'schedule' || steps.monitor_mihomo.outputs.stable_changed == 'true'
@@ -268,7 +258,7 @@ jobs:
           Write-Host "Deleted existing release and tag $tag."
 
       # ==============================
-      # Create GitHub Release
+      # Create GitHub Release and upload APKs
       # ==============================
       - name: Create GitHub Release and upload APKs
         if: github.event_name != 'schedule' || steps.monitor_mihomo.outputs.stable_changed == 'true'
